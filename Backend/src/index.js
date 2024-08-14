@@ -15,10 +15,6 @@ const requiredEnvVariables = [
     'FRONTEND_BASE_URI',
     'OUTPUT_PDF_PATH',
     'INPUT_PDF_PATH',
-    'LINKEDIN_IMG_PATH',
-    'INSTAGRAM_IMG_PATH',
-    'TWITTER_IMG_PATH',
-    'FACEBOOK_IMG_PATH'
 ];
 
 const missingEnvVariables = requiredEnvVariables.filter(variable => !process.env[variable]);
@@ -52,31 +48,6 @@ app.post('/', async (req, res, next) => {
         email,
         ccEmails,
         password } = decryptData(encryptedData);
-
-    // const obj = {
-    //     startingRowNo: 1,
-    //     fileData: [{
-    //         "Receipt No": 1,
-    //         "Date of Donation": "13/07/2024",
-    //         "Donar Name": "ABCDEFGHIJKLMONPQRSTUVWXYZabcdefghijklmnopqrstuvwxyZ",
-    //         "Donar Email": "akheniadrumil123@gmail.com",
-    //         "Amount of Donation": "7778200",
-    //         "Mode of Payment": "ONLINE TRANSFER",
-    //         "Email Subject": "Test",
-    //         "Email - Name" : "Email - Name",
-    //         "Email - Body": "Email - Body",
-    //         "Email - Sign": "Email - Sign",
-    //     }],
-    //     email: "akheniad@gmail.com",
-    //     password : "ywhv ydge mwdk dazk"
-    // };
-    // const {
-    //     startingRowNo,
-    //     fileData,
-    //     email,
-    //     ccEmails,
-    //     password } = obj;
-    console.log(startingRowNo, fileData, email, ccEmails, password)
     try {
         await readDataAndSendMail(startingRowNo, fileData, email, ccEmails, password);
         res.status(200).send();

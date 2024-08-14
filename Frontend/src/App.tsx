@@ -50,17 +50,10 @@ type ErrorAction =
   | { type: "CLEAR_ERRORS" };
 
 const initialInputState: InputState = {
-  // starting: "",
-  // ending: "",
-  // email: "",
-  // password: "",
-  // ccEmails: [],
-  // file: null,
-  // fileName: "",
-  starting: 2,
-  ending: 2,
-  email: "akheniad@gmail.com",
-  password: "dvjq hfrw gdqg iaco",
+  starting: "",
+  ending: "",
+  email: "",
+  password: "",
   ccEmails: [],
   file: null,
   fileName: "",
