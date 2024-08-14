@@ -1,0 +1,40 @@
+html {
+    box-sizing: border-box;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+}
+
+@font-face {
+    font-family: "League Spartan", sans-serif !important;
+    /* Specify the font family name */
+    src: url('./LeagueSpartan-VariableFont_wght.ttf') format('truetype');
+    /* Path to the font file */
+    font-weight: 700 !important;
+    font-style: normal;
+}
+
+/* Optionally define additional font weights and styles */
+/* @font-face {
+    font-family: 'CustomFont';
+    src: url('../fonts/CustomFont-Bold.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+} */
+
+.league-spartan-200 {
+    font-family: "League Spartan", sans-serif !important;
+    font-optical-sizing: auto !important;
+    font-weight: 700 !important;
+    font-style: normal !important;
+}

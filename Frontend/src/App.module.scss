@@ -1,0 +1,146 @@
+$primary-color: #1976d2;
+$secondary-color: #333;
+$text-color: #fff;
+$dark-text-color: #333;
+
+.appContainer {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-image: linear-gradient(to top, #9890e3 0%, #b1f4cf 100%);
+}
+
+.appBar {
+  background-color: $secondary-color;
+  display: flex;
+  align-items: center;
+  padding: 10px 20px;
+}
+
+.logo {
+  height: 40px;
+  margin-right: 10px;
+}
+
+.title {
+  flex-grow: 1;
+  text-align: center;
+  color: $text-color;
+}
+
+.formContainer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 3rem 2rem 2rem;
+}
+
+.formBox {
+  padding: 20px;
+  width: 100%;
+  max-width: 550px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  border-radius: 10px;
+  text-align: center;
+  background-color: white;
+  box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.75);
+}
+
+.fileInputContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2rem;
+
+  .fileName {
+    font-size: 1.1rem;
+    color: #555;
+  }
+
+  label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+    background-color: $primary-color;
+    padding: 1rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    color: $text-color;
+    &:hover {
+      background-color: darken($primary-color, 10%);
+    }
+  }
+
+  input[type="file"] {
+    display: none;
+  }
+
+  .fileInputLabel {
+    background-color: $primary-color;
+    color: $text-color;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+
+    &:hover {
+      background-color: darken($primary-color, 10%);
+    }
+  }
+}
+.submitButton {
+  background-color: $primary-color;
+  color: $text-color;
+  padding: 14px 20px;
+  border: none;
+  width: 100%;
+  max-width: 450px;
+  border-radius: 4px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  text-align: center;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  &.loading {
+    background-color: lighten($primary-color, 30%);
+    cursor: not-allowed;
+  }
+}
+
+.submitButton:hover {
+  background-color: darken($primary-color, 10%);
+}
+.loading:hover {
+  background-color: lighten($primary-color, 30%);
+  cursor: not-allowed;
+}
+
+.footer {
+  padding: 20px;
+  background-color: $secondary-color;
+  color: $text-color;
+  text-align: center;
+  border-top: 1px solid #ddd;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.footerLink {
+  color: yellow;
+  margin-left: 5px;
+}

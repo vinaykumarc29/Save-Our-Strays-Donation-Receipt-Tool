@@ -1,0 +1,54 @@
+.multiEmailInputContainer {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  
+    .emailsContainer {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      padding: 0.8rem 0.6rem;
+      border: 1px solid #c3c8cd;
+      border-radius: 0.3rem;
+      position: relative;
+      background: #fff;
+  
+      input {
+        flex: 1;
+        border: none;
+        outline: none;
+        padding: 0.2rem;
+        font-size: 1rem;
+      }
+  
+      .icon {
+        position: absolute;
+        left: 0.8rem;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 10;
+      }
+  
+      .emailTag {
+        display: flex;
+        align-items: center;
+        background-color: #e0e0e0;
+        padding: 0.2rem 0.6rem;
+        border-radius: 0.3rem;
+  
+        button {
+          background: none;
+          border: none;
+          cursor: pointer;
+          font-size: 1rem;
+          margin-left: 0.5rem;
+        }
+      }
+    }
+    .errorMessage {
+      color: red;
+      margin-top: 0.5rem;
+      text-align: left;
+    }
+  }
+  
