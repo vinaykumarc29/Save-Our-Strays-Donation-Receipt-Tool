@@ -114,7 +114,7 @@ export const sendMail = async (rowData, email, ccEmail, password) => {
         };
 
         // Send email with PDF attachment
-        // await transporter.sendMail(mailOptions);
+        await transporter.sendMail(mailOptions);
     } catch (error) {
         console.log(error);
         throw new Error('Error while sending mail. Please connect to your developers.');
