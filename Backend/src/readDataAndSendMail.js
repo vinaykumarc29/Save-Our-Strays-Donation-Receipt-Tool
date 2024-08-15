@@ -28,7 +28,10 @@ export const readDataAndSendMail = async (
                     "Email Subject": row['Email Subject'],
                     "Email - Name": row['Email - Name'],
                     "Email - Body": row['Email - Body'],
-                    "Email - Sign": row['Email - Sign']
+                    "Email - Sign": row['Email - Sign'],
+                    "Towards": row['Towards'],
+                    "Chq.No.": row['Chq.No.'],
+                    "Bank & Branch": row['Bank & Branch'],
                 };
                 validateRow(data, startingRowNo + index);
                 await sendMail(data, email, ccEmail, password);

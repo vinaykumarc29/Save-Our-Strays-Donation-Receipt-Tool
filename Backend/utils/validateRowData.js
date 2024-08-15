@@ -13,7 +13,8 @@ export function validateRow(row, rowNumber) {
         !row['Email Subject'] ||
         !row['Email - Name'] ||
         !row['Email - Body'] ||
-        !row['Email - Sign']
+        !row['Email - Sign'] ||
+        !row['Towards']
     ) {
         throw new Error(
             'Server Stopped sending mail from Row No :- ' + rowNumber + '\n Reason :- Some fields are empty in Row No :- ' + rowNumber

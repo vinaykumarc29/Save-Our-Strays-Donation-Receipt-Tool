@@ -41,15 +41,24 @@ export const sendMail = async (rowData, email, ccEmail, password) => {
         rowData['Amount of Donation'] = toWords.convert(parseInt(rowData["Amount of Donation"]));
 
         if (rowData["Donar Name"].length > 39) {
-            rowData["Remaining Donar Name"] = rowData["Donar Name"].substring(39);
-            rowData["Donar Name"] = rowData["Donar Name"].substring(0, 39);
+            rowData["Remaining Donar Name"] = rowData["Donar Name"].substring(38);
+            rowData["Donar Name"] = rowData["Donar Name"].substring(0, 38) + '-';
         }
 
         if (rowData['Amount of Donation'].length > 50) {
             rowData['Remaining Amount of Donation'] = rowData['Amount of Donation'].substring(50);
             rowData['Amount of Donation'] = rowData['Amount of Donation'].substring(0, 50) + '-';
         }
-        await helper(rowData);
+        let isModeOfPaymentLarge = false;
+        if (rowData['Mode of Payment'] == 'CHQ') {
+            rowData['Mode of Payment'] = `Chq.No.${rowData['Chq.No.']}  Bank & Branch. ${rowData['Bank & Branch']}`;
+            if (rowData['Mode of Payment'].length > 70) {
+                rowData['Remaining Mode of Payment'] = rowData["Mode of Payment"].substring(70);
+                rowData['Mode of Payment'] = rowData['Mode of Payment'].substring(0, 70) + '-';
+                isModeOfPaymentLarge = true;
+            }
+        }
+        await helper(rowData, isModeOfPaymentLarge);
         password = password.replace(/\s+/g, '');
         // Now, you can send an email after navigating to the endpoint and intercepting the request
         // Create a transporter using Gmail service
@@ -105,7 +114,7 @@ export const sendMail = async (rowData, email, ccEmail, password) => {
         };
 
         // Send email with PDF attachment
-        await transporter.sendMail(mailOptions);
+        // await transporter.sendMail(mailOptions);
     } catch (error) {
         console.log(error);
         throw new Error('Error while sending mail. Please connect to your developers.');
@@ -130,9 +139,9 @@ async function appendTextToPDF(pdfDoc, contents) {
     return pdfBytes;
 }
 
-const helper = async (data) => {
+const helper = async (data, isModeOfPaymentLarge) => {
     try {
-        const existingPdfBytes = fs.readFileSync(path.join(__dirname, process.env.INPUT_PDF_PATH));
+        const existingPdfBytes = fs.readFileSync(path.join(__dirname, isModeOfPaymentLarge ? process.env.INPUT_PDF_PATH : process.env.INPUT_PDF_PATH1));
         const pdfDoc = await PDFDocument.load(existingPdfBytes);
         let addOn = 0;
         const updatedPdfBytes = await appendTextToPDF(pdfDoc, [
@@ -157,7 +166,7 @@ const helper = async (data) => {
                 pageNo: 0,
                 x: 240,
                 y: 516,
-                // bold: true,
+                bold: true,
                 size: 12,
             },
             (
@@ -166,7 +175,7 @@ const helper = async (data) => {
                     pageNo: 0,
                     x: 80,
                     y: 500,
-                    // bold: true,
+                    bold: true,
                     size: 12
                 }
             ),
@@ -175,7 +184,7 @@ const helper = async (data) => {
                 pageNo: 0,
                 x: 195,
                 y: 482,
-                // bold: true,
+                bold: true,
                 size: 12,
             },
             (
@@ -184,7 +193,7 @@ const helper = async (data) => {
                     pageNo: 0,
                     x: 80,
                     y: 468,
-                    // bold: true,
+                    bold: true,
                     size: 12
                 }
             ),
@@ -196,11 +205,29 @@ const helper = async (data) => {
                 bold: true,
                 size: 12,
             },
+            (
+                data['Remaining Mode of Payment'] && {
+                    text: data['Remaining Mode of Payment'],
+                    pageNo: 0,
+                    x: 78,
+                    y: 435,
+                    bold: true,
+                    size: 12,
+                }
+            ),
+            {
+                text: data["Towards"],
+                pageNo: 0,
+                x: 133,
+                y: isModeOfPaymentLarge ? 413 : 430,
+                bold: true,
+                size: 12,
+            },
             {
                 text: data["Amount of Donation In Number"],
                 pageNo: 0,
                 x: 100,
-                y: 278,
+                y: isModeOfPaymentLarge ? 261 : 278,
                 bold: true,
                 size: 12,
             }
