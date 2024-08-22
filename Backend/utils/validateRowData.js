@@ -3,21 +3,25 @@
 // Define a function to validate the row data
 export function validateRow(row, rowNumber) {
     // Validate each field
-    if (
-        !row['Receipt No'] ||
-        !row['Date of Donation'] ||
-        !row['Donar Name'] ||
-        !row['Donar Email'] ||
-        !row['Amount of Donation'] ||
-        !row['Mode of Payment'] ||
-        !row['Email Subject'] ||
-        !row['Email - Name'] ||
-        !row['Email - Body'] ||
-        !row['Email - Sign'] ||
-        !row['Towards']
-    ) {
-        throw new Error(
-            'Server Stopped sending mail from Row No :- ' + rowNumber + '\n Reason :- Some fields are empty in Row No :- ' + rowNumber
-        );
+    const requiredFields = [
+        'Receipt No',
+        'Date of Donation',
+        'Donor Name',
+        'Donor Email',
+        'Amount of Donation',
+        'Mode of Payment',
+        'Email Subject',
+        'Email - Name',
+        'Email - Body',
+        'Email - Sign',
+        'Towards'
+    ];
+
+    for (const field of requiredFields) {
+        if (!row[field]) {
+            throw new Error(
+                `Error processing Row ${rowNumber}: The "${field}" field is missing or empty. Please ensure all required fields are filled in.`
+            );
+        }
     }
 }
