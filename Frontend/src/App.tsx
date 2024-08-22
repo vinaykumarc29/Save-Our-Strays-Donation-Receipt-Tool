@@ -252,19 +252,36 @@ const App: React.FC = () => {
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
 
-      const jsonData = XLSX.utils.sheet_to_json(worksheet, {
-        raw: false,  // This ensures dates are parsed to JS date objects
-        dateNF: 'dd-mm-yyyy',  // Define date format
-      });
-
-      // console.log(jsonData);
+      const jsonData = XLSX.utils.sheet_to_json(worksheet
+        // ,
+        //    {
+        //   raw: false,  // This ensures dates are parsed to JS date objects
+        //   dateNF: 'mm-dd-yyyy',  // Define date format
+        // }
+      );
+      const ExcelDateToJSDate = (date: number): string => {
+        let convertedDate = new Date(Math.round((date - 25569) * 864e5));
+        const dateString = convertedDate.toDateString().slice(4, 15);  // Extract the date portion
+        const dateParts = dateString.split(" ");
+      
+        const day = dateParts[1];
+        let month = dateParts[0];
+        const year = dateParts[2];
+      
+        // Convert month name to number
+        const monthNumber = ("JanFebMarAprMayJunJulAugSepOctNovDec".indexOf(month) / 3 + 1).toString();
+        const paddedMonth = monthNumber.length === 1 ? '0' + monthNumber : monthNumber;
+      
+        return `${day}/${paddedMonth}/${year.slice(2, 4)}`;
+      };
+      jsonData.map((data: any) => data['Date of Donation'] = ExcelDateToJSDate(data['Date of Donation']));
       const starting = Number(inputState.starting);
       const ending = Number(inputState.ending);
       const selectedRows = jsonData.slice(starting - 2, ending - 1);
-      
-      if( selectedRows.length==0 || selectedRows.length!=((ending-starting)+1) ){
+
+      if (selectedRows.length == 0 || selectedRows.length != ((ending - starting) + 1)) {
         toast.error('Please Select a valid starting and ending row');
-        return; 
+        return;
       }
       // console.log(selectedRows);
       const encryptedObj = encryptData({
@@ -278,7 +295,7 @@ const App: React.FC = () => {
 
       // Making the Axios call
       const response = await axios.post(import.meta.env.VITE_BACKEND_ENDPOINT as string, { encryptedData: encryptedObj });
-      console.log(response);
+
       // // Handle success
       if (response.status === 200) {
         toast.success('Congratulations! The recipes have been sent successfully.');

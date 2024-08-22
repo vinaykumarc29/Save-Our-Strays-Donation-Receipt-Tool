@@ -18,7 +18,7 @@ export function validateRow(row, rowNumber) {
     ];
 
     for (const field of requiredFields) {
-        if (!row[field]) {
+        if (row[field] == '') {
             throw new Error(
                 `Error processing Row ${rowNumber}: The "${field}" field is empty. Please ensure all required fields are filled in.`
             );
