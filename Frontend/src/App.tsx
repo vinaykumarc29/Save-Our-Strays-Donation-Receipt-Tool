@@ -263,15 +263,15 @@ const App: React.FC = () => {
         let convertedDate = new Date(Math.round((date - 25569) * 864e5));
         const dateString = convertedDate.toDateString().slice(4, 15);  // Extract the date portion
         const dateParts = dateString.split(" ");
-      
+
         const day = dateParts[1];
         let month = dateParts[0];
         const year = dateParts[2];
-      
+
         // Convert month name to number
         const monthNumber = ("JanFebMarAprMayJunJulAugSepOctNovDec".indexOf(month) / 3 + 1).toString();
         const paddedMonth = monthNumber.length === 1 ? '0' + monthNumber : monthNumber;
-      
+
         return `${day}/${paddedMonth}/${year.slice(2, 4)}`;
       };
       jsonData.map((data: any) => data['Date of Donation'] = ExcelDateToJSDate(data['Date of Donation']));
@@ -438,12 +438,21 @@ const App: React.FC = () => {
         <p>
           Built By
           <a
-            href="https://github.com/drumil32"
+            href="https://www.linkedin.com/in/drumil-akhenia/"
             target="_blank"
             rel="noopener noreferrer"
             className={styles.footerLink}
           >
-            Drumil Akhenia.
+            Drumil Akhenia
+          </a>
+          &nbsp; & &nbsp;
+          <a
+            href="https://www.linkedin.com/in/deepak-undefined-8a68a927a/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.footerLink}
+          >
+            Deepak Sagar
           </a>
         </p>
         <p>
