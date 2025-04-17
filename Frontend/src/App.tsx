@@ -314,6 +314,7 @@ const App: React.FC = () => {
         }
       } else {
         // General error handling
+        console.log(error);
         toast.error("An unexpected error occurred");
       }
       // console.error("Error:", error);
