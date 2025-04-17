@@ -261,6 +261,7 @@ const App: React.FC = () => {
       );
       const ExcelDateToJSDate = (date: number): string => {
         let convertedDate = new Date(Math.round((date - 25569) * 864e5));
+        console.log("convertedDate");console.log(convertedDate.toDateString());
         const dateString = convertedDate.toDateString().slice(4, 15);  // Extract the date portion
         const dateParts = dateString.split(" ");
 
@@ -271,12 +272,13 @@ const App: React.FC = () => {
         // Convert month name to number
         const monthNumber = ("JanFebMarAprMayJunJulAugSepOctNovDec".indexOf(month) / 3 + 1).toString();
         const paddedMonth = monthNumber.length === 1 ? '0' + monthNumber : monthNumber;
-
+console.log("year");console.log(year);
         return `${day}/${paddedMonth}/${year.slice(2, 4)}`;
       };
       jsonData.map((data: any) => data['Date of Donation'] = ExcelDateToJSDate(data['Date of Donation']));
       const starting = Number(inputState.starting);
       const ending = Number(inputState.ending);
+      console.log(jsonData);
       const selectedRows = jsonData.slice(starting - 2, ending - 1);
 
       if (selectedRows.length == 0 || selectedRows.length != ((ending - starting) + 1)) {
