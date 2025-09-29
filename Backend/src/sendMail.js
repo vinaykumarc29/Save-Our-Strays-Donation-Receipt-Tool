@@ -35,7 +35,7 @@ const toWords = new ToWords({
 export const sendMail = async (rowData, email, ccEmail, password) => {
 
     try {
-
+        console.log(rowData);
         rowData['Amount of Donation In Number'] = parseInt(rowData["Amount of Donation"]).toLocaleString('en-IN') + '/-';
 
         rowData['Amount of Donation'] = toWords.convert(parseInt(rowData["Amount of Donation"]));
