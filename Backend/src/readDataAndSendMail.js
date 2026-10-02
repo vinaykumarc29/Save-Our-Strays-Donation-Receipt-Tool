@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-import { sendMail } from './sendMail.js'; // Import the sendMail function
+import { sendMail, createMailTransporter } from './sendMail.js'; // Import sendMail and createMailTransporter
 // import { RowData } from './interfaces.js'; // Import the RowData interface
 import { validateRow } from '../utils/validateRowData.js';
 
@@ -11,7 +11,9 @@ export const readDataAndSendMail = async (
     fileData,
     email,
     ccEmail,
-    password) => {
+    password,
+    existingTransporter = null) => {
+    const transporter = existingTransporter || createMailTransporter(email, password);
     try {
         // Loop through each row
         for (let index = 0; index < fileData.length; index++) {
@@ -34,11 +36,15 @@ export const readDataAndSendMail = async (
                     "Bank & Branch": row['Bank & Branch'],
                 };
                 validateRow(data, startingRowNo + index);
-                await sendMail(data, email, ccEmail, password);
+                await sendMail(data, email, ccEmail, password, transporter);
             }
         }
     } catch (error) {
         // console.log(error)
         throw error;
+    } finally {
+        if (transporter && typeof transporter.close === 'function') {
+            transporter.close();
+        }
     }
 };

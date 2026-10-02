@@ -32,7 +32,39 @@ const toWords = new ToWords({
     },
 });
 
-export const sendMail = async (rowData, email, ccEmail, password) => {
+// In-memory cache for static PDF template bytes to avoid repeated disk reads
+let cachedInputPdfBytes = null;
+let cachedInput1PdfBytes = null;
+
+const getTemplateBytes = (isModeOfPaymentLarge) => {
+    if (isModeOfPaymentLarge) {
+        if (!cachedInputPdfBytes) {
+            cachedInputPdfBytes = fs.readFileSync(path.join(__dirname, process.env.INPUT_PDF_PATH));
+        }
+        return cachedInputPdfBytes;
+    } else {
+        if (!cachedInput1PdfBytes) {
+            cachedInput1PdfBytes = fs.readFileSync(path.join(__dirname, process.env.INPUT_PDF_PATH1));
+        }
+        return cachedInput1PdfBytes;
+    }
+};
+
+export const createMailTransporter = (email, password) => {
+    const cleanPassword = password ? String(password).replace(/\s+/g, '') : '';
+    return createTransport({
+        service: 'gmail',
+        pool: true,
+        maxConnections: 1,
+        maxMessages: 100,
+        auth: {
+            user: email,
+            pass: cleanPassword,
+        },
+    });
+};
+
+export const sendMail = async (rowData, email, ccEmail, password, transporter = null) => {
 
     try {
         console.log(rowData);
@@ -58,19 +90,10 @@ export const sendMail = async (rowData, email, ccEmail, password) => {
                 isModeOfPaymentLarge = true;
             }
         }
-        await helper(rowData, isModeOfPaymentLarge);
-        password = password.replace(/\s+/g, '');
-        // Now, you can send an email after navigating to the endpoint and intercepting the request
-        // Create a transporter using Gmail service
-        const transporter = createTransport({
-            service: 'gmail',
-            auth: {
-                user: email, // Use environment variables instead of hardcoding
-                pass: password, // Use environment variables instead of hardcoding
-            },
-        });
-        // console.log(__dirname);
-        // margin-top:12px;
+        const pdfBuffer = await helper(rowData, isModeOfPaymentLarge);
+        const cleanPassword = password ? String(password).replace(/\s+/g, '') : '';
+        const mailTransporter = transporter || createMailTransporter(email, cleanPassword);
+
         // Update the mailOptions object with the PDF attachment
         let from = `Save Our Strays ${email}`
         const mailOptions = {
@@ -86,35 +109,14 @@ export const sendMail = async (rowData, email, ccEmail, password) => {
             attachments: [
                 {
                     filename: `${rowData['Receipt No']}`,
-                    path: path.join(__dirname, process.env.OUTPUT_PDF_PATH),
+                    content: pdfBuffer,
                     contentType: 'application/pdf'
                 }
-                // , {
-                //     filename: "linkedin.png",
-                //     path: path.join(__dirname, process.env.LINKEDIN_IMG_PATH),
-                //     cid: "linkedin",
-                //     contentType: 'image/png'
-                // }, {
-                //     filename: "twitter.png",
-                //     path: path.join(__dirname, process.env.TWITTER_IMG_PATH),
-                //     cid: "twitter",
-                //     contentType: 'image/png'
-                // }, {
-                //     filename: "facebook.png",
-                //     path: path.join(__dirname, process.env.FACEBOOK_IMG_PATH),
-                //     cid: "facebook",
-                //     contentType: 'image/png'
-                // }, {
-                //     filename: "instagram.png",
-                //     path: path.join(__dirname, process.env.INSTAGRAM_IMG_PATH),
-                //     cid: "instagram",
-                //     contentType: 'image/png'
-                // }
             ]
         };
 
         // Send email with PDF attachment
-        await transporter.sendMail(mailOptions);
+        await mailTransporter.sendMail(mailOptions);
     } catch (error) {
         console.log(error);
         throw new Error('Error while sending mail. Please connect to your developers.');
@@ -141,7 +143,7 @@ async function appendTextToPDF(pdfDoc, contents) {
 
 const helper = async (data, isModeOfPaymentLarge) => {
     try {
-        const existingPdfBytes = fs.readFileSync(path.join(__dirname, isModeOfPaymentLarge ? process.env.INPUT_PDF_PATH : process.env.INPUT_PDF_PATH1));
+        const existingPdfBytes = getTemplateBytes(isModeOfPaymentLarge);
         const pdfDoc = await PDFDocument.load(existingPdfBytes);
         let addOn = 0;
         const updatedPdfBytes = await appendTextToPDF(pdfDoc, [
@@ -233,10 +235,12 @@ const helper = async (data, isModeOfPaymentLarge) => {
             }
         ]);
 
-        // Write the updated PDF bytes to a new file
-        fs.writeFileSync(path.join(__dirname, process.env.OUTPUT_PDF_PATH), updatedPdfBytes);
+        return Buffer.from(updatedPdfBytes);
     } catch (error) {
         console.log(error);
         throw new Error('Internval Server Error!');
     }
-}
+};
+
+export const generateReceiptPdf = helper;
+export { helper };
