@@ -1,6 +1,7 @@
 import { createTransport } from "nodemailer";
 // import { RowData } from "./interfaces.js";
 import dotenv from 'dotenv';
+import { performance } from 'perf_hooks';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -64,10 +65,19 @@ export const createMailTransporter = (email, password) => {
     });
 };
 
-export const sendMail = async (rowData, email, ccEmail, password, transporter = null) => {
+export const sendMail = async (rowData, email, ccEmail, password, transporter = null, rowNumber = null, timingCollector = null) => {
 
     try {
         console.log(rowData);
+        const currentRowNumber = rowNumber !== null && rowNumber !== undefined ? rowNumber : (rowData["Receipt No"] || 'Unknown');
+
+        const donorName = rowData["Donar Name"] || rowData["Donor Name"] || "";
+        const donorEmail = rowData["Donar Email"] || rowData["Donor Email"] || "";
+        rowData["Donar Name"] = donorName;
+        rowData["Donor Name"] = donorName;
+        rowData["Donar Email"] = donorEmail;
+        rowData["Donor Email"] = donorEmail;
+
         rowData['Amount of Donation In Number'] = parseInt(rowData["Amount of Donation"]).toLocaleString('en-IN') + '/-';
 
         rowData['Amount of Donation'] = toWords.convert(parseInt(rowData["Amount of Donation"]));
@@ -90,7 +100,17 @@ export const sendMail = async (rowData, email, ccEmail, password, transporter = 
                 isModeOfPaymentLarge = true;
             }
         }
+
+        const pdfStartTime = performance.now();
         const pdfBuffer = await helper(rowData, isModeOfPaymentLarge);
+        const pdfTime = performance.now() - pdfStartTime;
+        console.log(
+            `Row ${currentRowNumber} PDF generation: ${pdfTime.toFixed(2)} ms`
+        );
+        if (timingCollector && typeof timingCollector.addPdfTime === 'function') {
+            timingCollector.addPdfTime(pdfTime);
+        }
+
         const cleanPassword = password ? String(password).replace(/\s+/g, '') : '';
         const mailTransporter = transporter || createMailTransporter(email, cleanPassword);
 
@@ -116,10 +136,21 @@ export const sendMail = async (rowData, email, ccEmail, password, transporter = 
         };
 
         // Send email with PDF attachment
+        const emailStartTime = performance.now();
         await mailTransporter.sendMail(mailOptions);
+        const emailTime = performance.now() - emailStartTime;
+        console.log(
+            `Row ${currentRowNumber} email sending: ${emailTime.toFixed(2)} ms`
+        );
+        if (timingCollector && typeof timingCollector.addEmailTime === 'function') {
+            timingCollector.addEmailTime(emailTime);
+        }
     } catch (error) {
-        console.log(error);
-        throw new Error('Error while sending mail. Please connect to your developers.');
+        console.error("Error in sendMail:", error);
+        if (error.message && error.message.startsWith('PDF generation error')) {
+            throw error;
+        }
+        throw new Error(`SMTP error: ${error.message || 'Failed to send email'}`);
     }
 };
 
@@ -237,8 +268,8 @@ const helper = async (data, isModeOfPaymentLarge) => {
 
         return Buffer.from(updatedPdfBytes);
     } catch (error) {
-        console.log(error);
-        throw new Error('Internval Server Error!');
+        console.error("PDF generation error in helper:", error);
+        throw new Error(`PDF generation error: ${error.message || 'Failed to render PDF'}`);
     }
 };
 

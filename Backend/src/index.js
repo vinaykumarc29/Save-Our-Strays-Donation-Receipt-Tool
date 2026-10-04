@@ -49,8 +49,8 @@ app.post('/', async (req, res, next) => {
         ccEmails,
         password } = decryptData(encryptedData);
     try {
-        await readDataAndSendMail(startingRowNo, fileData, email, ccEmails, password);
-        res.status(200).send();
+        const summary = await readDataAndSendMail(startingRowNo, fileData, email, ccEmails, password);
+        res.status(200).json(summary);
     } catch (error) {
         next(error); // Pass the error to the error handling middleware
     }
