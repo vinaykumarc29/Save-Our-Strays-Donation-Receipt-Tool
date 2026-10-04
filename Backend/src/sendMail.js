@@ -51,12 +51,13 @@ const getTemplateBytes = (isModeOfPaymentLarge) => {
     }
 };
 
-export const createMailTransporter = (email, password) => {
+export const createMailTransporter = (email, password, maxConnections = 1) => {
     const cleanPassword = password ? String(password).replace(/\s+/g, '') : '';
+    const connections = Math.max(1, Math.min(Number(maxConnections) || 1, 3));
     return createTransport({
         service: 'gmail',
         pool: true,
-        maxConnections: 1,
+        maxConnections: connections,
         maxMessages: 100,
         auth: {
             user: email,
@@ -68,41 +69,42 @@ export const createMailTransporter = (email, password) => {
 export const sendMail = async (rowData, email, ccEmail, password, transporter = null, rowNumber = null, timingCollector = null) => {
 
     try {
-        console.log(rowData);
-        const currentRowNumber = rowNumber !== null && rowNumber !== undefined ? rowNumber : (rowData["Receipt No"] || 'Unknown');
+        const itemData = { ...rowData };
+        console.log(itemData);
+        const currentRowNumber = rowNumber !== null && rowNumber !== undefined ? rowNumber : (itemData["Receipt No"] || 'Unknown');
 
-        const donorName = rowData["Donar Name"] || rowData["Donor Name"] || "";
-        const donorEmail = rowData["Donar Email"] || rowData["Donor Email"] || "";
-        rowData["Donar Name"] = donorName;
-        rowData["Donor Name"] = donorName;
-        rowData["Donar Email"] = donorEmail;
-        rowData["Donor Email"] = donorEmail;
+        const donorName = itemData["Donar Name"] || itemData["Donor Name"] || "";
+        const donorEmail = itemData["Donar Email"] || itemData["Donor Email"] || "";
+        itemData["Donar Name"] = donorName;
+        itemData["Donor Name"] = donorName;
+        itemData["Donar Email"] = donorEmail;
+        itemData["Donor Email"] = donorEmail;
 
-        rowData['Amount of Donation In Number'] = parseInt(rowData["Amount of Donation"]).toLocaleString('en-IN') + '/-';
+        itemData['Amount of Donation In Number'] = parseInt(itemData["Amount of Donation"]).toLocaleString('en-IN') + '/-';
 
-        rowData['Amount of Donation'] = toWords.convert(parseInt(rowData["Amount of Donation"]));
+        itemData['Amount of Donation'] = toWords.convert(parseInt(itemData["Amount of Donation"]));
 
-        if (rowData["Donar Name"].length > 39) {
-            rowData["Remaining Donar Name"] = rowData["Donar Name"].substring(38);
-            rowData["Donar Name"] = rowData["Donar Name"].substring(0, 38) + '-';
+        if (itemData["Donar Name"].length > 39) {
+            itemData["Remaining Donar Name"] = itemData["Donar Name"].substring(38);
+            itemData["Donar Name"] = itemData["Donar Name"].substring(0, 38) + '-';
         }
 
-        if (rowData['Amount of Donation'].length > 50) {
-            rowData['Remaining Amount of Donation'] = rowData['Amount of Donation'].substring(50);
-            rowData['Amount of Donation'] = rowData['Amount of Donation'].substring(0, 50) + '-';
+        if (itemData['Amount of Donation'].length > 50) {
+            itemData['Remaining Amount of Donation'] = itemData['Amount of Donation'].substring(50);
+            itemData['Amount of Donation'] = itemData['Amount of Donation'].substring(0, 50) + '-';
         }
         let isModeOfPaymentLarge = false;
-        if (rowData['Mode of Payment'] == 'CHQ') {
-            rowData['Mode of Payment'] = `Chq.No.${rowData['Chq.No.']}  Bank & Branch. ${rowData['Bank & Branch']}`;
-            if (rowData['Mode of Payment'].length > 70) {
-                rowData['Remaining Mode of Payment'] = rowData["Mode of Payment"].substring(70);
-                rowData['Mode of Payment'] = rowData['Mode of Payment'].substring(0, 70) + '-';
+        if (itemData['Mode of Payment'] == 'CHQ') {
+            itemData['Mode of Payment'] = `Chq.No.${itemData['Chq.No.']}  Bank & Branch. ${itemData['Bank & Branch']}`;
+            if (itemData['Mode of Payment'].length > 70) {
+                itemData['Remaining Mode of Payment'] = itemData["Mode of Payment"].substring(70);
+                itemData['Mode of Payment'] = itemData['Mode of Payment'].substring(0, 70) + '-';
                 isModeOfPaymentLarge = true;
             }
         }
 
         const pdfStartTime = performance.now();
-        const pdfBuffer = await helper(rowData, isModeOfPaymentLarge);
+        const pdfBuffer = await helper(itemData, isModeOfPaymentLarge);
         const pdfTime = performance.now() - pdfStartTime;
         console.log(
             `Row ${currentRowNumber} PDF generation: ${pdfTime.toFixed(2)} ms`
@@ -117,18 +119,18 @@ export const sendMail = async (rowData, email, ccEmail, password, transporter = 
         // Update the mailOptions object with the PDF attachment
         let from = `Save Our Strays ${email}`
         const mailOptions = {
+            to: itemData["Donar Email"],
             from: from,
-            to: rowData["Donar Email"],
             cc: ccEmail,
-            subject: rowData["Email Subject"],
+            subject: itemData["Email Subject"],
             html: `
-                ${rowData["Email - Name"]}
-                <p>${rowData["Email - Body"]}</p>
-                <p>${rowData["Email - Sign"]}</p>
+                ${itemData["Email - Name"]}
+                <p>${itemData["Email - Body"]}</p>
+                <p>${itemData["Email - Sign"]}</p>
             `,
             attachments: [
                 {
-                    filename: `${rowData['Receipt No']}`,
+                    filename: `${itemData['Receipt No']}`,
                     content: pdfBuffer,
                     contentType: 'application/pdf'
                 }
@@ -150,7 +152,11 @@ export const sendMail = async (rowData, email, ccEmail, password, transporter = 
         if (error.message && error.message.startsWith('PDF generation error')) {
             throw error;
         }
-        throw new Error(`SMTP error: ${error.message || 'Failed to send email'}`);
+        const wrappedError = new Error(`SMTP error: ${error.message || 'Failed to send email'}`);
+        if (error.code) wrappedError.code = error.code;
+        if (error.responseCode) wrappedError.responseCode = error.responseCode;
+        if (error.command) wrappedError.command = error.command;
+        throw wrappedError;
     }
 };
 
