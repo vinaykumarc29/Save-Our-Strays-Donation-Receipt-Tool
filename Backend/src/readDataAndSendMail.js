@@ -21,9 +21,17 @@ export const readDataAndSendMail = async (
     email,
     ccEmail,
     password,
-    existingTransporter = null) => {
+    existingTransporter = null,
+    onProgress = null) => {
     if (!Array.isArray(fileData) || fileData.length === 0) {
         throw new Error('No row data found in the spreadsheet payload.');
+    }
+
+    let actualTransporter = existingTransporter;
+    let actualOnProgress = onProgress;
+    if (typeof existingTransporter === 'function' && onProgress === null) {
+        actualOnProgress = existingTransporter;
+        actualTransporter = null;
     }
 
     const batchStartTime = performance.now();
@@ -40,7 +48,7 @@ export const readDataAndSendMail = async (
         addEmailTime: (ms) => { totalEmailTime += ms; }
     };
 
-    const transporter = existingTransporter || createMailTransporter(email, password);
+    const transporter = actualTransporter || createMailTransporter(email, password);
     const results = [];
     let successful = 0;
     let failed = 0;
@@ -91,23 +99,41 @@ export const readDataAndSendMail = async (
                 await sendMail(data, email, ccEmail, password, transporter, rowNumber, timingCollector);
 
                 successful++;
-                results.push({
+                const itemResult = {
                     row: rowNumber,
                     receiptNo: String(data["Receipt No"] || ""),
                     donorEmail: String(donorEmail || ""),
                     status: "success"
-                });
+                };
+                results.push(itemResult);
+                if (typeof actualOnProgress === 'function') {
+                    actualOnProgress({
+                        processed: results.length,
+                        successful,
+                        failed,
+                        lastResult: itemResult
+                    });
+                }
             } catch (rowError) {
                 console.error(`Row ${rowNumber} failed:`, rowError.message);
                 failed++;
                 const safeError = sanitizeErrorMessage(rowError.message, rowNumber);
-                results.push({
+                const itemResult = {
                     row: rowNumber,
                     receiptNo: String(row['Receipt No'] || ""),
                     donorEmail: String(row['Donar Email'] || row['Donor Email'] || ""),
                     status: "failed",
                     error: safeError
-                });
+                };
+                results.push(itemResult);
+                if (typeof actualOnProgress === 'function') {
+                    actualOnProgress({
+                        processed: results.length,
+                        successful,
+                        failed,
+                        lastResult: itemResult
+                    });
+                }
             }
         }
 

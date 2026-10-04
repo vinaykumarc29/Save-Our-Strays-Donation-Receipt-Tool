@@ -1,4 +1,4 @@
-import React, { useEffect, useReducer, useState } from "react";
+import React, { useEffect, useReducer, useRef, useState } from "react";
 import axios from "axios";
 import * as XLSX from 'xlsx';
 import { ToastContainer, toast } from "react-toastify";
@@ -17,6 +17,25 @@ import MultiEmailInput from "./Comps/MultiEmailInput/MultiEmailInput";
 import encryptData from "../utils/encryptData";
 // import linkedIn from "./assets/linkedIn.png";
 // import instagram from "./assets/instagram.png"
+
+type JobItemResult = {
+  row: number;
+  receiptNo: string;
+  donorEmail: string;
+  status: "success" | "failed";
+  error?: string;
+};
+
+type JobProgress = {
+  jobId: string;
+  status: "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED";
+  total: number;
+  processed: number;
+  successful: number;
+  failed: number;
+  results?: JobItemResult[];
+  error?: string | null;
+};
 
 type InputState = {
   starting: number | "";
@@ -118,6 +137,62 @@ const App: React.FC = () => {
   );
 
   const [isLoading, setIsLoading] = useState(false);
+  const [activeJob, setActiveJob] = useState<JobProgress | null>(null);
+  const pollIntervalRef = useRef<any>(null);
+
+  const startPolling = (jobId: string) => {
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
+    }
+
+    const backendBase = ((import.meta.env.VITE_BACKEND_ENDPOINT as string) || "").replace(/\/+$/, "");
+    const pollUrl = `${backendBase}/jobs/${jobId}`;
+
+    const checkStatus = async () => {
+      try {
+        const res = await axios.get<JobProgress>(pollUrl);
+        const data = res.data;
+        setActiveJob(data);
+
+        if (data.status === "COMPLETED") {
+          if (pollIntervalRef.current) {
+            clearInterval(pollIntervalRef.current);
+            pollIntervalRef.current = null;
+          }
+          localStorage.removeItem("active_job_id");
+          setIsLoading(false);
+
+          if (data.failed === 0) {
+            toast.success(`Congratulations! All ${data.successful} receipts have been sent successfully.`);
+          } else {
+            toast.warn(`Batch completed: ${data.successful} succeeded, ${data.failed} failed.`);
+          }
+        } else if (data.status === "FAILED") {
+          if (pollIntervalRef.current) {
+            clearInterval(pollIntervalRef.current);
+            pollIntervalRef.current = null;
+          }
+          localStorage.removeItem("active_job_id");
+          setIsLoading(false);
+          toast.error(data.error || "Batch processing failed.");
+        }
+      } catch (err: any) {
+        if (err.response && err.response.status === 404) {
+          if (pollIntervalRef.current) {
+            clearInterval(pollIntervalRef.current);
+            pollIntervalRef.current = null;
+          }
+          localStorage.removeItem("active_job_id");
+          setIsLoading(false);
+          toast.error("Active job not found on server (it may have expired or server restarted).");
+        }
+      }
+    };
+
+    checkStatus();
+    pollIntervalRef.current = setInterval(checkStatus, 1500);
+  };
 
   useEffect(() => {
     const awakeServer = async () => {
@@ -128,6 +203,18 @@ const App: React.FC = () => {
       }
     };
     awakeServer();
+
+    const savedJobId = localStorage.getItem("active_job_id");
+    if (savedJobId) {
+      setIsLoading(true);
+      startPolling(savedJobId);
+    }
+
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+      }
+    };
   }, []);
 
   const handleInputBlur = (fieldName: keyof InputState) => {
@@ -298,19 +385,32 @@ console.log("year");console.log(year);
       // Making the Axios call
       const response = await axios.post(import.meta.env.VITE_BACKEND_ENDPOINT as string, { encryptedData: encryptedObj });
 
-      // // Handle success
-      if (response.status === 200) {
-        toast.success('Congratulations! The recipes have been sent successfully.');
+      if (response.status === 200 && response.data?.jobId) {
+        const jobId = response.data.jobId;
+        const initialJob: JobProgress = {
+          jobId,
+          status: response.data.status || 'PROCESSING',
+          total: response.data.total || selectedRows.length,
+          processed: response.data.processed || 0,
+          successful: response.data.successful || 0,
+          failed: response.data.failed || 0,
+          results: response.data.results || []
+        };
+        setActiveJob(initialJob);
+        localStorage.setItem("active_job_id", jobId);
+        toast.info("Batch uploaded! Processing in background...");
+        dispatchInput({ type: "CLEAR_INPUTS" });
+        startPolling(jobId);
+      } else {
+        toast.error('Encountered error submitting batch; please connect with developer');
+        setIsLoading(false);
       }
-      else {
-        toast.error('Encounter Error in sending mail please connect to the developer'); // error
-      }
-      dispatchInput({ type: "CLEAR_INPUTS" });
     } catch (error) {
+      setIsLoading(false);
       if (axios.isAxiosError(error)) {
         // Specific handling for Axios errors
         if (error.response && error.response.data) {
-          toast.error(error.response.data);
+          toast.error(typeof error.response.data === 'string' ? error.response.data : JSON.stringify(error.response.data));
         } else {
           toast.error("Internal Server Error");
         }
@@ -320,8 +420,6 @@ console.log("year");console.log(year);
         toast.error("An unexpected error occurred");
       }
       // console.error("Error:", error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -422,6 +520,7 @@ console.log("year");console.log(year);
               isLoading && styles.loading
             )}
             onClick={handleSubmit}
+            disabled={isLoading}
           >
             {isLoading ? (
               <Lottie
@@ -434,6 +533,69 @@ console.log("year");console.log(year);
               "Submit"
             )}
           </button>
+
+          {activeJob && (
+            <div className={styles.jobProgressCard}>
+              <div className={styles.jobHeader}>
+                <span className={styles.jobStatusBadge} data-status={activeJob.status}>
+                  {activeJob.status}
+                </span>
+                <span className={styles.jobPercent}>
+                  {activeJob.total > 0
+                    ? Math.min(100, Math.round((activeJob.processed / activeJob.total) * 100))
+                    : 0}%
+                </span>
+              </div>
+
+              <div className={styles.progressBarTrack}>
+                <div
+                  className={styles.progressBarFill}
+                  style={{
+                    width: `${
+                      activeJob.total > 0
+                        ? Math.min(100, Math.round((activeJob.processed / activeJob.total) * 100))
+                        : 0
+                    }%`,
+                  }}
+                />
+              </div>
+
+              <div className={styles.jobStats}>
+                <span>
+                  Processed: <strong>{activeJob.processed} / {activeJob.total}</strong>
+                </span>
+                <span className={styles.statSuccess}>✓ {activeJob.successful} success</span>
+                <span className={styles.statFailed}>✗ {activeJob.failed} failed</span>
+              </div>
+
+              {activeJob.status === "COMPLETED" && activeJob.failed > 0 && activeJob.results && (
+                <div className={styles.failedSection}>
+                  <div className={styles.failedTitle}>
+                    Failed Rows ({activeJob.failed}):
+                  </div>
+                  <div className={styles.failedList}>
+                    {activeJob.results
+                      .filter((r) => r.status === "failed")
+                      .map((r, idx) => (
+                        <div key={idx} className={styles.failedRowItem}>
+                          <strong>Row {r.row}</strong> {r.donorEmail ? `(${r.donorEmail})` : ""}: {r.error || "Failed to send"}
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {(activeJob.status === "COMPLETED" || activeJob.status === "FAILED") && (
+                <button
+                  type="button"
+                  className={styles.dismissButton}
+                  onClick={() => setActiveJob(null)}
+                >
+                  Clear Status
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
       <footer className={styles.footer}>

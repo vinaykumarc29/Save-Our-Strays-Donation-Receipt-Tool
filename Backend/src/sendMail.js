@@ -179,7 +179,7 @@ const helper = async (data, isModeOfPaymentLarge) => {
         let addOn = 0;
         const updatedPdfBytes = await appendTextToPDF(pdfDoc, [
             {
-                text: data["Receipt No"].toString(),
+                text: (data["Receipt No"] || "").toString(),
                 pageNo: 0,
                 x: 100,
                 y: 547,
@@ -187,7 +187,7 @@ const helper = async (data, isModeOfPaymentLarge) => {
                 size: 12,
             },
             {
-                text: data["Date of Donation"],
+                text: (data["Date of Donation"] || "").toString(),
                 pageNo: 0,
                 x: 385,
                 y: 547,
@@ -195,7 +195,7 @@ const helper = async (data, isModeOfPaymentLarge) => {
                 size: 12,
             },
             {
-                text: data["Donar Name"],
+                text: (data["Donar Name"] !== undefined ? data["Donar Name"] : (data["Donor Name"] || "")),
                 pageNo: 0,
                 x: 240,
                 y: 516,
@@ -257,7 +257,7 @@ const helper = async (data, isModeOfPaymentLarge) => {
                 size: 12,
             },
             {
-                text: data["Amount of Donation In Number"],
+                text: (data["Amount of Donation In Number"] || data["Amount of Donation"] || "").toString(),
                 pageNo: 0,
                 x: 100,
                 y: isModeOfPaymentLarge ? 261 : 278,

@@ -145,3 +145,135 @@ $dark-text-color: #333;
   color: yellow;
   margin-left: 5px;
 }
+
+.jobProgressCard {
+  width: 100%;
+  max-width: 450px;
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 8px;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  text-align: left;
+}
+
+.jobHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.jobStatusBadge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+
+  &[data-status="PROCESSING"] {
+    background-color: #e0f2fe;
+    color: #0369a1;
+  }
+  &[data-status="PENDING"] {
+    background-color: #fef3c7;
+    color: #b45309;
+  }
+  &[data-status="COMPLETED"] {
+    background-color: #dcfce7;
+    color: #15803d;
+  }
+  &[data-status="FAILED"] {
+    background-color: #fee2e2;
+    color: #b91c1c;
+  }
+}
+
+.jobPercent {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.progressBarTrack {
+  width: 100%;
+  height: 8px;
+  background-color: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progressBarFill {
+  height: 100%;
+  background: linear-gradient(90deg, #1976d2, #42a5f5);
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+.jobStats {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: #334155;
+
+  .statSuccess {
+    color: #16a34a;
+    font-weight: 600;
+  }
+
+  .statFailed {
+    color: #dc2626;
+    font-weight: 600;
+  }
+}
+
+.failedSection {
+  margin-top: 0.5rem;
+  border-top: 1px dashed #cbd5e1;
+  padding-top: 0.5rem;
+
+  .failedTitle {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #dc2626;
+    margin-bottom: 0.25rem;
+  }
+
+  .failedList {
+    max-height: 150px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .failedRowItem {
+    font-size: 0.75rem;
+    background-color: #fff1f2;
+    color: #9f1239;
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid #fecdd3;
+  }
+}
+
+.dismissButton {
+  margin-top: 0.25rem;
+  background-color: #e2e8f0;
+  color: #475569;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  align-self: flex-end;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: #cbd5e1;
+  }
+}
